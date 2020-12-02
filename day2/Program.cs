@@ -10,9 +10,21 @@ var passwords = from l in File.ReadAllLines("input.txt")
                 let charInQuestion = words[2][0]
                 let password = words[4].Trim()
                 let charCount = password.Count(c => c == charInQuestion) 
-                let isValid = charCount >= minOccurances && charCount <= maxOccurances
-                where isValid == true
+                where charCount >= minOccurances && charCount <= maxOccurances
                 select password;
 
-WriteLine($"There are {passwords.Count()} valid passwords");
+WriteLine($"There are {passwords.Count()} valid passwords for part 1");
 
+var part2 = from l in File.ReadAllLines("input.txt")
+                let words = l.Split('-', ' ', ':')
+                let firstIndex = int.Parse(words[0])
+                let secondIndex = int.Parse(words[1])
+                let charInQuestion = words[2][0]
+                let password = words[4].Trim()
+                let hasCharInFirstIndex = password[firstIndex -1] == charInQuestion
+                let hasCharInSecondIndex = password[secondIndex - 1] == charInQuestion
+                where (hasCharInFirstIndex && !hasCharInSecondIndex) ||
+                      (!hasCharInFirstIndex && hasCharInSecondIndex)
+                select password;
+
+WriteLine($"There are {part2.Count()} valid passwords for part 2");
