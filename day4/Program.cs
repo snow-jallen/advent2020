@@ -70,6 +70,9 @@ namespace day4
             }
 
             Console.WriteLine($"Found {passports.Count(p=>p.IsValid)} valid passports");
+
+            Console.WriteLine($"Using implementation 2 I found...");
+            Day4Implementation2.Run();
         }
     }
 
