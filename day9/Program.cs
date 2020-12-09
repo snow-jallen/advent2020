@@ -13,11 +13,32 @@ namespace day9
             var sample = new Scenario(5, 5, File.ReadAllLines("sample.txt").Select(l=>long.Parse(l)).ToArray());
             var final = new Scenario(25, 25, File.ReadAllLines("input.txt").Select(l=>long.Parse(l)).ToArray());
 
-            var part1 = findFirstNumberDoesntFit(final);
+            var scenario = final;
+            var (part1, index) = findFirstNumberDoesntFit(scenario);
             Console.WriteLine($"The first number that doesn't fit is {part1}");
+
+            var part2 = findPart2(scenario, index);
+            Console.WriteLine($"part 2 {part2}");
         }
 
-        private static long findFirstNumberDoesntFit(Scenario scenario)
+        private static long findPart2(Scenario scenario, int index)
+        {
+            var invalidNumber = scenario.Numbers[index];
+            for(var start = 0; start < scenario.Numbers.Length - 2; start++)
+            {
+                for(var stop = 2; stop < scenario.Numbers.Length; stop++)
+                {
+                    var range = scenario.Numbers.Skip(start).Take(stop-start);
+                    if(range.Sum() == invalidNumber)
+                    {
+                        return range.Min() + range.Max();
+                    }
+                }
+            }
+            return -1;
+        }
+
+        private static (long, int) findFirstNumberDoesntFit(Scenario scenario)
         {
             for(int index = scenario.PreambleSize; index < scenario.Numbers.Length; index++)
             {
@@ -32,9 +53,9 @@ namespace day9
                                 Two = two
                             };
                 if(!sum.Any())
-                    return scenario.Numbers[index];
+                    return (scenario.Numbers[index], index);
             }
-            return -1;
+            return (-1,-1);
         }
     }
 
