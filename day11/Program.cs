@@ -76,7 +76,7 @@ L.#.L..#..
         static void Main(string[] args)
         {
             List<(int row, int col, bool? state)> initialState = new ();
-            var items = File.ReadAllLines("input.txt");
+            var items = File.ReadAllLines("sample.txt");
             for(int row = 0; row < items.Length; row++)
             {
                 var seats = items[row];
@@ -153,6 +153,46 @@ L.#.L..#..
             return neighborCount;
         }
 
+        private int getVisibleNeighborCount((int row, int col) cell)
+        {
+            var visibleNeighbors = 0;
+            if(visibleNeighbor(cell, -1, -1))
+                visibleNeighbors++;
+            if(visibleNeighbor(cell, -1, 0))
+                visibleNeighbors++;
+            if(visibleNeighbor(cell, -1, +1))
+                visibleNeighbors++;
+            if(visibleNeighbor(cell, 0, -1))
+                visibleNeighbors++;
+            if(visibleNeighbor(cell, 0, +1))
+                visibleNeighbors++;
+            if(visibleNeighbor(cell, +1, -1))
+                visibleNeighbors++;
+            if(visibleNeighbor(cell, +1, 0))
+                visibleNeighbors++;
+            if(visibleNeighbor(cell, +1, +1))
+                visibleNeighbors++;
+            return visibleNeighbors;
+        }
+
+        private bool visibleNeighbor((int row, int col) cell, int deltaRow, int deltaCol)
+        {
+            var testRow = cell.row;
+            var testCol = cell.col;
+
+            while(testRow >= 0 && testRow < maxRow && testCol >= 0 && testCol < maxCol)
+            {
+                if(board[(testRow, testCol)] == true)
+                    return true;
+                testRow += deltaRow;
+                testCol += deltaCol;
+            }
+            return false;
+        }
+        
+        int maxRow;
+        int maxCol;
+
         //private ConcurrentDictionary<(int row, int col), bool?> board = new ();
         private Dictionary<(int row, int col), bool?> board = new ();
 
@@ -163,13 +203,15 @@ L.#.L..#..
 
         public Generation(Generation prev) : this()
         {
+            maxRow = prev.board.Keys.Max(c => c.row);
+            maxCol = prev.board.Keys.Max(c => c.col);
             //Parallel.ForEach(prev.board.Keys, cell =>
             foreach(var cell in prev.board.Keys)
             {
-                var neighborCount = prev.getNeighborCount(cell);
+                var neighborCount = prev.getVisibleNeighborCount(cell);
                 if(prev.board[cell] == false && neighborCount == 0) //was empty
                     board[cell] = true;
-                else if(prev.board[cell] == true && neighborCount >= 4) //occupied w/4 neighbors
+                else if(prev.board[cell] == true && neighborCount >= 5) //occupied w/4 neighbors
                     board[cell] = false;
                 else
                     board[cell] = prev.board[cell];
@@ -180,8 +222,6 @@ L.#.L..#..
         public override string ToString()
         {
             var str = new StringBuilder();
-            var maxRow = board.Keys.Max(c => c.row);
-            var maxCol = board.Keys.Max(c => c.col);
 
             for(var row = 0; row < maxRow; row++)
             {
