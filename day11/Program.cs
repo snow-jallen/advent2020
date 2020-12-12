@@ -88,24 +88,34 @@ LLL###LLL#
 
         static void Main(string[] args)
         {
-            List<(int row, int col, bool? state)> initialState = new();
-            var items = File.ReadAllLines("sample.txt");
-            for (int row = 0; row < items.Length; row++)
-            {
-                var seats = items[row];
-                for (int col = 0; col < seats.Length; col++)
-                {
-                    initialState.Add((row, col, seats[col] switch
-                    {
-                        'L' => false,
-                        _ => null
-                    }));
-                }
-            }
+            var items = File.ReadAllLines("input.txt");
+            List<(int row, int col, bool? state)> initialState = getInitialState(items);
             var initialGeneration = Generation.Initialize(initialState);
             var prevGen = initialGeneration;
 
+            //testLookingAhead();
 
+            //testSampleGenerations(initialGeneration);
+
+            Generation finalGen;
+            while (true)
+            {
+                var nextGen = new Generation(prevGen);
+
+                Console.Write($"{nextGen.GenerationNumber}, ");
+
+                if (nextGen.IsSameAs(prevGen))
+                {
+                    finalGen = nextGen;
+                    break;
+                }
+                prevGen = nextGen;
+            }
+            Console.WriteLine($"Part1: {finalGen.OccupiedCount}");
+        }
+
+        private static void testSampleGenerations(Generation initialGeneration)
+        {
             var gen1 = new Generation(initialGeneration);
             gen1.ToString().Trim().Should().Be(sample_gen1.Trim());
 
@@ -123,22 +133,71 @@ LLL###LLL#
 
             var gen6 = new Generation(gen5);
             gen6.ToString().Trim().Should().Be(sample_gen6.Trim());
+        }
 
-            Generation finalGen;
-            while (true)
+        private static void testLookingAhead()
+        {
+            Generation.Initialize(getInitialState(@"
+.......#.
+...#.....
+.#.......
+.........
+..#L....#
+....#....
+.........
+#........
+...#.....".Trim()
+            .Split(Environment.NewLine)))
+            .GetVisibleNeighborCount((4, 3))
+            .Should().Be(8);
+
+            Generation.Initialize(getInitialState(@"
+.............
+.L.L.#.#.#.#.
+.............".Trim()
+            .Split(Environment.NewLine)))
+            .GetVisibleNeighborCount((1, 1))
+            .Should().Be(0);
+
+            Generation.Initialize(getInitialState(@"
+.............
+.L.L.#.#.#.#.
+.............".Trim()
+            .Split(Environment.NewLine)))
+            .GetVisibleNeighborCount((1, 3))
+            .Should().Be(1);
+
+            Generation.Initialize(getInitialState(@"
+.##.##.
+#.#.#.#
+##...##
+...L...
+##...##
+#.#.#.#
+.##.##.".Trim()
+            .Split(Environment.NewLine)))
+            .GetVisibleNeighborCount((3, 3))
+            .Should().Be(0);
+        }
+
+        private static List<(int row, int col, bool? state)> getInitialState(string[] items)
+        {
+            List<(int row, int col, bool? state)> initialState = new();
+            for (int row = 0; row < items.Length; row++)
             {
-                var nextGen = new Generation(prevGen);
-
-                Console.Write($"{nextGen.GenerationNumber}, ");
-
-                if (nextGen.IsSameAs(prevGen))
+                var seats = items[row];
+                for (int col = 0; col < seats.Length; col++)
                 {
-                    finalGen = nextGen;
-                    break;
+                    initialState.Add((row, col, seats[col] switch
+                    {
+                        'L' => false,
+                        '#' => true,
+                        _ => null
+                    }));
                 }
-                prevGen = nextGen;
             }
-            Console.WriteLine($"Part1: {finalGen.OccupiedCount}");
+
+            return initialState;
         }
     }
 
@@ -158,6 +217,7 @@ LLL###LLL#
             maxRow = firstGeneration.board.Keys.Max(c => c.row);
             maxCol = firstGeneration.board.Keys.Max(c => c.col);
 
+            //Console.WriteLine(firstGeneration.ToString());
             return firstGeneration;
         }
 
@@ -174,7 +234,7 @@ LLL###LLL#
             return false;
         }
 
-        private int getNeighborCount((int row, int col) cell)
+        public int GetNeighborCount((int row, int col) cell)
         {
             var neighbors = new[]{
                 getValue((cell.row+1, cell.col-1)),
@@ -190,7 +250,7 @@ LLL###LLL#
             return neighborCount;
         }
 
-        private int getVisibleNeighborCount((int row, int col) cell)
+        public int GetVisibleNeighborCount((int row, int col) cell)
         {
             var visibleNeighbors = 0;
             if (visibleNeighbor(cell, -1, -1))
@@ -210,7 +270,7 @@ LLL###LLL#
             if (visibleNeighbor(cell, +1, +1))
                 visibleNeighbors++;
 
-            Console.WriteLine($"{cell.row},{cell.col} has {visibleNeighbors} visible neighbors");
+            //Console.WriteLine($"{cell.row},{cell.col} has {visibleNeighbors} visible neighbors");
             return visibleNeighbors;
         }
 
@@ -219,10 +279,12 @@ LLL###LLL#
             var testRow = cell.row + deltaRow;
             var testCol = cell.col + deltaCol;
 
-            while (testRow >= 0 && testRow < maxRow && testCol >= 0 && testCol < maxCol)
+            while (testRow >= 0 && testRow <= maxRow && testCol >= 0 && testCol <= maxCol)
             {
                 if (board[(testRow, testCol)] == true)
                     return true;
+                if (board[(testRow, testCol)] == false)
+                    return false;
                 testRow += deltaRow;
                 testCol += deltaCol;
             }
@@ -245,21 +307,22 @@ LLL###LLL#
             //Parallel.ForEach(prev.board.Keys, cell =>
             foreach (var cell in prev.board.Keys)
             {
-                var neighborCount = prev.getVisibleNeighborCount(cell);
+                var neighborCount = prev.GetVisibleNeighborCount(cell);
                 if (prev.board[cell] == false && neighborCount == 0) //was empty
                 {
-                    Console.WriteLine($"{cell.row},{cell.col} was empty but will now be filled");
+                    //Console.WriteLine($"{cell.row},{cell.col} was empty but will now be filled");
                     board[cell] = true;
                 }
                 else if (prev.board[cell] == true && neighborCount >= 5) //occupied w/4 neighbors
                 {
-                    Console.WriteLine($"{cell.row},{cell.col} is too full, will now be empty.");
+                    //Console.WriteLine($"{cell.row},{cell.col} is too full, will now be empty.");
                     board[cell] = false;
                 }
                 else
                     board[cell] = prev.board[cell];
                 //});            
             }
+            //Console.WriteLine(ToString());
         }
 
         public override string ToString()
