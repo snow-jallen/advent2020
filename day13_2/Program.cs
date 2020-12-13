@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -26,12 +27,12 @@ namespace day13
             var soonest = multiples.OrderBy(m => m.NextArrival).First();
             var part1 = soonest.BusID * (soonest.NextArrival - arrivalTime);
 
-            Console.WriteLine($"Part2 = {part2(lines[1])}");
             System.Diagnostics.Debug.Assert(part2("17,x,13,19") == 3417);
             System.Diagnostics.Debug.Assert(part2("67,7,59,61") == 754018);
             System.Diagnostics.Debug.Assert(part2("67,x,7,59,61") == 779210);
             System.Diagnostics.Debug.Assert(part2("67,7,x,59,61") == 1261476);
             System.Diagnostics.Debug.Assert(part2("1789,37,47,1889") == 1202161486);
+            Console.WriteLine($"Part2 = {part2(lines[1], 110649000000000, shouldExit: true)}");
 
             Console.WriteLine("you did it!");
         }
@@ -42,57 +43,37 @@ namespace day13
                 yield return starting += increment;
         } 
 
-        private static long part2(string timeString)
+        private static long part2(string timeString, long startingNum = 1, bool shouldExit = false)
         {
             var index = 0;
-            var busTimes = (from item in timeString.Split(',')
+            var busses = (from item in timeString.Split(',')
                             select new
                             {
-                                WhoCares = item == "x",
                                 Matters = item != "x",
                                 BusId = int.TryParse(item, out int b) ? b : -1,
                                 Index = index++
-                            }).ToList();
-            var bussesThatMatter = (from b in busTimes
-                                    where b.Matters
-                                    select b).ToList();
+                            })
+                            .Where( b => b.Matters)
+                            .ToList();
 
-            long startingNum = 100000000000000L;
-            while(startingNum % busTimes[0].BusId != 0)
+            var startingBus = busses.OrderByDescending(b => b.BusId).First();
+            //var startingBus = busses.First();
+            while(startingNum % startingBus.BusId != 0)
                 startingNum++;
-            // for (long t = startingNum; ; t+=bussesThatMatter[0].BusId)
-            // {
-            //     if(t % 1_000_000 == 0)
-            //         Console.WriteLine($"{t/1000000:n0}");
-            //     if(bussesThatMatter.All(b => (t + b.Index) % b.BusId == 0))
-            //     {
-            //         Console.WriteLine($"It works at {t}?!");
-            //         return t;
-            //     }
 
-            // }
-
-            Parallel.ForEach(getRange(startingNum, bussesThatMatter[0].BusId), t =>
+            ConcurrentBag<long> finalNumbers = new ();
+            Parallel.ForEach(getRange(startingNum - startingBus.Index, startingBus.BusId), (t, state) =>
             {
-                if(t % 1_000_000 == 0)
-                    Console.WriteLine($"{t/1000000:n0}");
-                if(bussesThatMatter.All(b => (t + b.Index) % b.BusId == 0))
+                if(t % 100_000_000 == 0)
+                    Console.WriteLine($"{t}");
+                if(busses.All(b => (t + b.Index) % b.BusId == 0))
                 {
                     Console.WriteLine($"It works at {t}!");
-                    Environment.Exit(0);
+                    finalNumbers.Add(t);
+                    state.Stop();
                 }
             });
-            return 0L;
-
-            // Parallel.For(startingNum, long.MaxValue, (t => {
-            //     if(t % 1_000_000 == 0)
-            //         Console.WriteLine($"{t/1000000:n0}, ");
-            //     if(bussesThatMatter.All(b => (t + b.Index) % b.BusId == 0))
-            //     {
-            //         Console.WriteLine($"It works at {t}?!");
-            //         return t;
-            //     }
-            // }));
+            return finalNumbers.Min();
         }
     }
 }
