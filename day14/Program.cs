@@ -15,7 +15,7 @@ namespace day14
 
         public Program(string[] lines)
         {
-            Registers = new Dictionary<int, long>();
+            Registers = new ();
 
             foreach(var line in lines)
             {
@@ -26,17 +26,41 @@ namespace day14
                 }
 
                 var parts = line.Split(new char[] { '[', ']', '=', ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                var offset = int.Parse(parts[1]);
+                var address = int.Parse(parts[1]);
                 var value = int.Parse(parts[2]);
 
-                var strVal = Convert.ToString(value, 2).PadLeft(Mask.Length, '0').ToArray();
+                var maskedAddress = Convert.ToString(address, 2).PadLeft(Mask.Length, '0').ToArray();
                 for(int i = 0; i < Mask.Length; i++)
                 {
-                    if (Mask[i] == 'X')
+                    if (Mask[i] == '0')
                         continue;
-                    strVal[i] = Mask[i];
+                    maskedAddress[i] = Mask[i];
                 }
-                Registers[offset] = Convert.ToInt64(new String(strVal), 2);
+
+                var addresses = new List<string>();
+                addresses.Add("");
+                for(int i = 0; i < Mask.Length; i++)
+                {
+                    if (maskedAddress[i] == 'X')
+                    {
+                        var copy = addresses.ToArray().ToList();
+                        addresses.AppendOnAll("0");
+                        copy.AppendOnAll("1");
+                        addresses.AddRange(copy);
+                    }
+                    else
+                    {
+                        addresses.AppendOnAll(maskedAddress[i].ToString());
+                    }
+                }
+
+                foreach(var floatedAddress in addresses)
+                {
+                    var offset = Convert.ToInt64(floatedAddress, 2);
+                    Registers[offset] = value;
+                }
+
+                //Registers[offset] = Convert.ToInt64(new String(strVal), 2);
             }
 
         }
@@ -44,9 +68,18 @@ namespace day14
         public string Mask { get; }
         public IEnumerable<Instruction> Instructions { get; private set; }
         public int Result { get; private set; }
-        public Dictionary<int, long> Registers { get; }
+        public Dictionary<long, long> Registers { get; }
 
     }
 
     public record Instruction(int offset, int value);
+
+    public static class Extensions
+    {
+        public static void AppendOnAll(this List<string> list, string valueToAppend)
+        {
+            for (int i = 0; i < list.Count; i++)
+                list[i] += valueToAppend;
+        }
+    }
 }
