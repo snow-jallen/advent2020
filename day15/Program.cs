@@ -10,10 +10,11 @@ namespace day15
 {
     class Program
     {
-        public static List<int> numbers;
+        public static List<int> numbers = new List<int>(30_000_000);
         public static int startingNumCount;
         static void Main(string[] args)
         {
+            playGame("0,13,16,17,1,10,6");
             playGame("0,3,6").Should().Be(436);
             playGame("1,3,2").Should().Be(1);
             playGame("2,1,3").Should().Be(10);
@@ -21,18 +22,19 @@ namespace day15
             playGame("2,3,1").Should().Be(78);
             playGame("3,2,1").Should().Be(438);
             playGame("3,1,2").Should().Be(1836);
-            playGame("0,13,16,17,1,10,6");
         }
 
         private static int playGame(string numberString)
         {
-            numbers = numberString
+            var endingTurn = 30000000;
+            Console.WriteLine();
+            Console.WriteLine($"Evaluating {endingTurn:n0} turns for {numberString}");
+            numbers.Clear();
+            numbers.AddRange(numberString
                         .Split(',')
                         .Select(n => int.Parse(n))
-                        .Reverse()
-                        .ToList();
+                        .Reverse());
             startingNumCount = numbers.Count;
-            var endingTurn = 2020;
             var nthNumber = buildSequence(endingTurn);
             Console.WriteLine($"The {endingTurn}th number is {nthNumber}");
             return nthNumber;
@@ -43,6 +45,8 @@ namespace day15
             for (int i = 1; i <= endingTurn - startingNumCount; i++)
             {
                 takeATurn();
+                if(i % 500_000 == 0)
+                    Console.Write($"{i}, ");
             }
             return numbers[0];
         }
@@ -62,7 +66,7 @@ namespace day15
 
         public static int findLastTurnSpoken(int prev)
         {
-            if(numbers.Count(n => n == prev) <= 1)
+            if(numbers.IndexOf(prev, 1) < 0)
                 return -1;
             return numbers.IndexOf(prev)+1;//zero based
         }
