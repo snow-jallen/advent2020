@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace day14
 {
@@ -36,6 +37,7 @@ namespace day14
                         continue;
                     maskedAddress[i] = Mask[i];
                 }
+                var addresses2 = expand(new String(maskedAddress));
 
                 var addresses = new List<string>();
                 addresses.Add("");
@@ -54,7 +56,7 @@ namespace day14
                     }
                 }
 
-                foreach(var floatedAddress in addresses)
+                foreach (var floatedAddress in addresses)
                 {
                     var offset = Convert.ToInt64(floatedAddress, 2);
                     Registers[offset] = value;
@@ -65,10 +67,38 @@ namespace day14
 
         }
 
+        private List<string> expand(string maskedAddress)
+        {
+            var possibilities = new List<string>();
+            visitRemaining("");
+
+            void visitRemaining(string partial)
+            {
+                if (partial.Length == maskedAddress.Length)
+                {
+                    possibilities.Add(partial);
+                    return;
+                }
+
+                var current = maskedAddress[partial.Length];
+                if(current == 'X')
+                {
+                    visitRemaining(partial + "0");
+                    visitRemaining(partial + "1");
+                }
+                else
+                {
+                    visitRemaining(partial + current);
+                }
+            }
+            return possibilities;
+        }
+
         public string Mask { get; }
         public IEnumerable<Instruction> Instructions { get; private set; }
         public int Result { get; private set; }
         public Dictionary<long, long> Registers { get; }
+
 
     }
 
