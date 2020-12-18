@@ -14,13 +14,14 @@ namespace day17
             Dictionary<Cell, bool> initial = new();
             string[] lines = File.ReadAllLines("input.txt");
             int z = 0;
+            int w = 0;
             for (int y = 1; y <= lines.Length; y++)
             {
                 string line = lines[lines.Length - y];
                 for (int x = 1; x <= line.Length; x++)
                 {
                     char cell = line[x - 1];
-                    initial.Add(new Cell(x, y, z), cell == '#');
+                    initial.Add(new Cell(x, y, z, w), cell == '#');
                 }
             }
             var currentLive = GetTotalLive(initial);
@@ -33,11 +34,11 @@ namespace day17
             var generations = new Dictionary<Cell, bool>[7];
             generations[0] = initial;
 
-            for(int gen=1; gen <= 6; gen++)
+            for (int gen = 1; gen <= 6; gen++)
             {
-                generations[gen] = DoGeneration(generations[gen-1]);
+                generations[gen] = DoGeneration(generations[gen - 1]);
             }
-            var liveCount = GetTotalLive(generations[6]);            
+            var liveCount = GetTotalLive(generations[6]);
         }
 
         public static string PrintBoard(Dictionary<Cell, bool> board)
@@ -45,17 +46,23 @@ namespace day17
             var maxX = board.Keys.Max(k => k.x);
             int minY = board.Keys.Min(k => k.y);
             var maxZ = board.Keys.Max(k => k.z);
+            var maxW = board.Keys.Max(k => k.w);
 
             var str = new StringBuilder($"\n\n{GetTotalLive(board)} alive in this generation\n");
-            for (int z = board.Keys.Min(k => k.z); z <= maxZ; z++)
+            for (int w = board.Keys.Min(k => k.w); w <= maxW; w++)
             {
-                str.AppendLine($"z={z}");
-                for (int y = board.Keys.Max(k => k.y); y >= minY; y--)
+                str.AppendLine($"w={w}");
+                for (int z = board.Keys.Min(k => k.z); z <= maxZ; z++)
                 {
-                    for (int x = board.Keys.Min(k => k.x); x <= maxX; x++)
+                    str.AppendLine($"z={z}");
+                    for (int y = board.Keys.Max(k => k.y); y >= minY; y--)
                     {
-                        var cell = new Cell(x, y, z);
-                        str.Append(board.ContainsKey(cell) && board[cell] ? '#' : '.');
+                        for (int x = board.Keys.Min(k => k.x); x <= maxX; x++)
+                        {
+                            var cell = new Cell(x, y, z, w);
+                            str.Append(board.ContainsKey(cell) && board[cell] ? '#' : '.');
+                        }
+                        str.AppendLine();
                     }
                     str.AppendLine();
                 }
@@ -67,36 +74,89 @@ namespace day17
         public static IEnumerable<Cell> GetNeighbors(Cell cell)
         {
             return new[]{
-                //in front
-                new Cell(cell.x-1, cell.y-1, cell.z-1),//top left
-                new Cell(cell.x-0, cell.y-1, cell.z-1),//top center
-                new Cell(cell.x+1, cell.y-1, cell.z-1),//top right
-                new Cell(cell.x-1, cell.y-0, cell.z-1),//middle left
-                new Cell(cell.x-0, cell.y-0, cell.z-1),//middle center
-                new Cell(cell.x+1, cell.y-0, cell.z-1),//middle right
-                new Cell(cell.x-1, cell.y+1, cell.z-1),//bottom left
-                new Cell(cell.x-0, cell.y+1, cell.z-1),//bottom center
-                new Cell(cell.x+1, cell.y+1, cell.z-1),//bottom right
-                //center
-                new Cell(cell.x-1, cell.y-1, cell.z-0),//top left
-                new Cell(cell.x-0, cell.y-1, cell.z-0),//top center
-                new Cell(cell.x+1, cell.y-1, cell.z-0),//top right
-                new Cell(cell.x-1, cell.y-0, cell.z-0),//middle left
-                                                       //middle center is the current cell
-                new Cell(cell.x+1, cell.y-0, cell.z-0),//middle right
-                new Cell(cell.x-1, cell.y+1, cell.z-0),//bottom left
-                new Cell(cell.x-0, cell.y+1, cell.z-0),//bottom center
-                new Cell(cell.x+1, cell.y+1, cell.z-0),//bottom right
-                //behind
-                new Cell(cell.x-1, cell.y-1, cell.z+1),//top left
-                new Cell(cell.x-0, cell.y-1, cell.z+1),//top center
-                new Cell(cell.x+1, cell.y-1, cell.z+1),//top right
-                new Cell(cell.x-1, cell.y-0, cell.z+1),//middle left
-                new Cell(cell.x-0, cell.y-0, cell.z+1),//middle center
-                new Cell(cell.x+1, cell.y-0, cell.z+1),//middle right
-                new Cell(cell.x-1, cell.y+1, cell.z+1),//bottom left
-                new Cell(cell.x-0, cell.y+1, cell.z+1),//bottom center
-                new Cell(cell.x+1, cell.y+1, cell.z+1),//bottom right
+                new Cell(cell.x-1, cell.y-1, cell.z-1, cell.w-1),//top left  //in front
+                new Cell(cell.x-0, cell.y-1, cell.z-1, cell.w-1),//top center
+                new Cell(cell.x+1, cell.y-1, cell.z-1, cell.w-1),//top right
+                new Cell(cell.x-1, cell.y-0, cell.z-1, cell.w-1),//middle left
+                new Cell(cell.x-0, cell.y-0, cell.z-1, cell.w-1),//middle center
+                new Cell(cell.x+1, cell.y-0, cell.z-1, cell.w-1),//middle right
+                new Cell(cell.x-1, cell.y+1, cell.z-1, cell.w-1),//bottom left
+                new Cell(cell.x-0, cell.y+1, cell.z-1, cell.w-1),//bottom center
+                new Cell(cell.x+1, cell.y+1, cell.z-1, cell.w-1),//bottom right                
+                new Cell(cell.x-1, cell.y-1, cell.z-0, cell.w-1),//top left  //center
+                new Cell(cell.x-0, cell.y-1, cell.z-0, cell.w-1),//top center
+                new Cell(cell.x+1, cell.y-1, cell.z-0, cell.w-1),//top right
+                new Cell(cell.x-1, cell.y-0, cell.z-0, cell.w-1),//middle left
+                new Cell(cell.x-0, cell.y-0, cell.z-0, cell.w-1),//middle center is the current cell
+                new Cell(cell.x+1, cell.y-0, cell.z-0, cell.w-1),//middle right
+                new Cell(cell.x-1, cell.y+1, cell.z-0, cell.w-1),//bottom left
+                new Cell(cell.x-0, cell.y+1, cell.z-0, cell.w-1),//bottom center
+                new Cell(cell.x+1, cell.y+1, cell.z-0, cell.w-1),//bottom right                
+                new Cell(cell.x-1, cell.y-1, cell.z+1, cell.w-1),//top left  //behind
+                new Cell(cell.x-0, cell.y-1, cell.z+1, cell.w-1),//top center
+                new Cell(cell.x+1, cell.y-1, cell.z+1, cell.w-1),//top right
+                new Cell(cell.x-1, cell.y-0, cell.z+1, cell.w-1),//middle left
+                new Cell(cell.x-0, cell.y-0, cell.z+1, cell.w-1),//middle center
+                new Cell(cell.x+1, cell.y-0, cell.z+1, cell.w-1),//middle right
+                new Cell(cell.x-1, cell.y+1, cell.z+1, cell.w-1),//bottom left
+                new Cell(cell.x-0, cell.y+1, cell.z+1, cell.w-1),//bottom center
+                new Cell(cell.x+1, cell.y+1, cell.z+1, cell.w-1),//bottom right
+                
+                new Cell(cell.x-1, cell.y-1, cell.z-1, cell.w-0),//top left  //in front
+                new Cell(cell.x-0, cell.y-1, cell.z-1, cell.w-0),//top center
+                new Cell(cell.x+1, cell.y-1, cell.z-1, cell.w-0),//top right
+                new Cell(cell.x-1, cell.y-0, cell.z-1, cell.w-0),//middle left
+                new Cell(cell.x-0, cell.y-0, cell.z-1, cell.w-0),//middle center
+                new Cell(cell.x+1, cell.y-0, cell.z-1, cell.w-0),//middle right
+                new Cell(cell.x-1, cell.y+1, cell.z-1, cell.w-0),//bottom left
+                new Cell(cell.x-0, cell.y+1, cell.z-1, cell.w-0),//bottom center
+                new Cell(cell.x+1, cell.y+1, cell.z-1, cell.w-0),//bottom right                
+                new Cell(cell.x-1, cell.y-1, cell.z-0, cell.w-0),//top left  //center
+                new Cell(cell.x-0, cell.y-1, cell.z-0, cell.w-0),//top center
+                new Cell(cell.x+1, cell.y-1, cell.z-0, cell.w-0),//top right
+                new Cell(cell.x-1, cell.y-0, cell.z-0, cell.w-0),//middle left
+                                                                 //middle center is the current cell
+                new Cell(cell.x+1, cell.y-0, cell.z-0, cell.w-0),//middle right
+                new Cell(cell.x-1, cell.y+1, cell.z-0, cell.w-0),//bottom left
+                new Cell(cell.x-0, cell.y+1, cell.z-0, cell.w-0),//bottom center
+                new Cell(cell.x+1, cell.y+1, cell.z-0, cell.w-0),//bottom right                
+                new Cell(cell.x-1, cell.y-1, cell.z+1, cell.w-0),//top left  //behind
+                new Cell(cell.x-0, cell.y-1, cell.z+1, cell.w-0),//top center
+                new Cell(cell.x+1, cell.y-1, cell.z+1, cell.w-0),//top right
+                new Cell(cell.x-1, cell.y-0, cell.z+1, cell.w-0),//middle left
+                new Cell(cell.x-0, cell.y-0, cell.z+1, cell.w-0),//middle center
+                new Cell(cell.x+1, cell.y-0, cell.z+1, cell.w-0),//middle right
+                new Cell(cell.x-1, cell.y+1, cell.z+1, cell.w-0),//bottom left
+                new Cell(cell.x-0, cell.y+1, cell.z+1, cell.w-0),//bottom center
+                new Cell(cell.x+1, cell.y+1, cell.z+1, cell.w-0),//bottom right
+
+                new Cell(cell.x-1, cell.y-1, cell.z-1, cell.w+1),//top left  //in front
+                new Cell(cell.x-0, cell.y-1, cell.z-1, cell.w+1),//top center
+                new Cell(cell.x+1, cell.y-1, cell.z-1, cell.w+1),//top right
+                new Cell(cell.x-1, cell.y-0, cell.z-1, cell.w+1),//middle left
+                new Cell(cell.x-0, cell.y-0, cell.z-1, cell.w+1),//middle center
+                new Cell(cell.x+1, cell.y-0, cell.z-1, cell.w+1),//middle right
+                new Cell(cell.x-1, cell.y+1, cell.z-1, cell.w+1),//bottom left
+                new Cell(cell.x-0, cell.y+1, cell.z-1, cell.w+1),//bottom center
+                new Cell(cell.x+1, cell.y+1, cell.z-1, cell.w+1),//bottom right                
+                new Cell(cell.x-1, cell.y-1, cell.z-0, cell.w+1),//top left  //center
+                new Cell(cell.x-0, cell.y-1, cell.z-0, cell.w+1),//top center
+                new Cell(cell.x+1, cell.y-1, cell.z-0, cell.w+1),//top right
+                new Cell(cell.x-1, cell.y-0, cell.z-0, cell.w+1),//middle left
+                new Cell(cell.x-0, cell.y-0, cell.z-0, cell.w+1),//middle center is the current cell
+                new Cell(cell.x+1, cell.y-0, cell.z-0, cell.w+1),//middle right
+                new Cell(cell.x-1, cell.y+1, cell.z-0, cell.w+1),//bottom left
+                new Cell(cell.x-0, cell.y+1, cell.z-0, cell.w+1),//bottom center
+                new Cell(cell.x+1, cell.y+1, cell.z-0, cell.w+1),//bottom right                
+                new Cell(cell.x-1, cell.y-1, cell.z+1, cell.w+1),//top left  //behind
+                new Cell(cell.x-0, cell.y-1, cell.z+1, cell.w+1),//top center
+                new Cell(cell.x+1, cell.y-1, cell.z+1, cell.w+1),//top right
+                new Cell(cell.x-1, cell.y-0, cell.z+1, cell.w+1),//middle left
+                new Cell(cell.x-0, cell.y-0, cell.z+1, cell.w+1),//middle center
+                new Cell(cell.x+1, cell.y-0, cell.z+1, cell.w+1),//middle right
+                new Cell(cell.x-1, cell.y+1, cell.z+1, cell.w+1),//bottom left
+                new Cell(cell.x-0, cell.y+1, cell.z+1, cell.w+1),//bottom center
+                new Cell(cell.x+1, cell.y+1, cell.z+1, cell.w+1),//bottom right
             };
         }
 
@@ -134,5 +194,5 @@ namespace day17
         }
     }
 
-    public record Cell(int x, int y, int z);
+    public record Cell(int x, int y, int z, int w);
 }
